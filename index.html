@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snyk + Okta Integration</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Snyk-inspired colors (refined based on screenshot) */
+        :root {
+            --snyk-dark-bg: #0F023F; /* Deep indigo from screenshot */
+            --snyk-card-bg-light: #2C1E55; /* Slightly lighter dark for cards/sections */
+            --snyk-text-light: #F9FAFB; /* Very light text for dark backgrounds */
+            --snyk-heading-color: #FFFFFF; /* White for main headings */
+            --snyk-accent-pink: #FF66A1; /* Vibrant pink accent */
+            --snyk-accent-purple: #6C47FF; /* Vibrant purple accent */
+            --snyk-gradient-start: #6C47FF; /* Start of button/hero gradient */
+            --snyk-gradient-end: #FF66A1; /* End of button/hero gradient */
+            --snyk-border-dark: rgba(255,255,255,0.1); /* Subtle white border for dark elements */
+            --snyk-placeholder-text: rgba(255,255,255,0.6); /* Lighter text for placeholders */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--snyk-text-light);
+            background-color: var(--snyk-dark-bg);
+            line-height: 1.6; /* Improved readability */
+        }
+
+        h1, h2, h3, h4 {
+            font-weight: 800; /* Extra bold for headings to match screenshot */
+            color: var(--snyk-heading-color);
+        }
+
+        p {
+            font-weight: 400;
+        }
+
+        /* Custom gradients and shadows to mimic Snyk's style */
+        .gradient-background {
+            background: linear-gradient(135deg, var(--snyk-gradient-start) 0%, var(--snyk-gradient-end) 100%);
+        }
+
+        .snyk-button {
+            background: linear-gradient(90deg, var(--snyk-gradient-start), var(--snyk-gradient-end));
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            border-radius: 9999px; /* Pill-shaped buttons */
+            padding: 0.875rem 2rem; /* Consistent padding */
+            font-weight: 600; /* Semi-bold text */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); /* More pronounced shadow */
+            color: white !important; /* Ensure text is white */
+        }
+
+        .snyk-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+        }
+
+        .card-shadow {
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2); /* Deeper shadow for cards */
+        }
+
+        /* Specific styles for accordion */
+        .accordion-header {
+            cursor: pointer;
+            padding: 1.25rem 1.5rem; /* More padding */
+            border-bottom: 1px solid var(--snyk-border-dark);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            background-color: var(--snyk-card-bg-light); /* Lighter dark for header */
+            border-radius: 0.5rem; /* Rounded corners for header when closed */
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .accordion-header:hover {
+            background-color: #3d2d6c; /* Subtle hover effect, slightly darker */
+        }
+
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out, padding 0.4s ease-out; /* Slower transition */
+            padding: 0 1.5rem; /* Align padding with header */
+            background-color: #372A60; /* Slightly different dark for content */
+            border-bottom-left-radius: 0.5rem;
+            border-bottom-right-radius: 0.5rem;
+            color: var(--snyk-text-light);
+        }
+
+        .accordion-content.active {
+            max-height: 800px; /* Increased max-height for potential content */
+            padding: 1.5rem; /* Consistent padding */
+            border-top: 1px solid var(--snyk-border-dark); /* Separator line */
+        }
+
+        .accordion-icon {
+            transition: transform 0.3s ease-out;
+            font-size: 1.2rem; /* Larger icon */
+            color: var(--snyk-accent-purple); /* Accent color for icon */
+        }
+
+        .accordion-icon.rotate {
+            transform: rotate(90deg);
+        }
+
+        /* Gemini button on dark background */
+        .gemini-button {
+            background-color: #4285F4; /* Google Blue */
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px; /* Full rounded corners */
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 500; /* font-medium */
+            transition: background-color 0.2s ease-in-out;
+            border: none;
+            cursor: pointer;
+            display: inline-flex; /* For spinner alignment */
+            align-items: center;
+            justify-content: center;
+        }
+
+        .gemini-button:hover {
+            background-color: #357ae8; /* Darker blue on hover */
+        }
+
+        .loading-spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid #fff;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: 0.5rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Specific styles for inputs on dark background */
+        textarea#qa-input {
+            background-color: #372A60; /* Darker input background */
+            border-color: var(--snyk-border-dark);
+            color: var(--snyk-text-light);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+        }
+        textarea#qa-input::placeholder {
+            color: var(--snyk-placeholder-text);
+        }
+        textarea#qa-input:focus {
+            outline: none;
+            border-color: var(--snyk-accent-purple);
+            box-shadow: 0 0 0 2px rgba(108, 71, 255, 0.3); /* Focus ring with accent color */
+        }
+
+        /* Output for AI responses */
+        .summary-output, #qa-output {
+            background-color: #4A3A74; /* Slightly lighter shade for output boxes */
+            color: var(--snyk-text-light);
+            border: 1px solid var(--snyk-border-dark);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header Section -->
+    <header class="bg-snyk-dark-bg py-4 border-b border-snyk-border-dark">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+            <!-- Snyk Logo Placeholder (replace with actual SVG if available) -->
+            <div class="flex items-center space-x-2">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="2" width="20" height="20" rx="4" fill="var(--snyk-accent-purple)"/>
+                    <path d="M7 12L10 15L17 8" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="text-2xl font-extrabold text-snyk-heading-color">Snyk</span>
+            </div>
+            <h1 class="text-xl sm:text-2xl font-extrabold text-snyk-heading-color">Snyk + Okta Integration</h1>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8 sm:py-12">
+
+        <!-- Hero Section -->
+        <section class="bg-snyk-dark-bg text-white rounded-lg p-8 md:p-12 text-center mb-12">
+            <h2 class="text-3xl md:text-5xl font-extrabold mb-4 leading-tight">
+                TRUST AI <br> AT FULL SPEED.
+            </h2>
+            <p class="text-lg md:text-xl opacity-90 max-w-3xl mx-auto font-light mb-8">
+                Secure AI generated code and AI Native apps –<br>today and for the new frontier of development.
+            </p>
+            <p class="text-md md:text-lg opacity-80 max-w-3xl mx-auto font-light mb-10">
+                AI innovation begins with trust. AI trust begins with Snyk.
+            </p>
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <a href="https://snyk.io/contact-sales/" target="_blank" class="snyk-button text-white">
+                    Book a live demo
+                </a>
+                <button class="snyk-button bg-transparent border border-white border-opacity-30 hover:border-opacity-60 text-white !shadow-none hover:!shadow-lg">
+                    Sign up
+                </button>
+            </div>
+        </section>
+
+        <!-- Benefits Section -->
+        <section class="mb-12">
+            <h3 class="text-2xl md:text-3xl font-bold text-center mb-8 text-snyk-heading-color">Benefits for Every Role</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Developer Card -->
+                <div class="bg-snyk-card-bg-light rounded-lg p-6 card-shadow border border-snyk-border-dark">
+                    <h4 class="text-xl font-semibold mb-3 text-snyk-heading-color">For Developers</h4>
+                    <ul class="list-disc pl-5 text-snyk-text-light opacity-80 space-y-2">
+                        <li>Streamlined access to Snyk, reducing friction in your security workflow.</li>
+                        <li>Automated user provisioning and de-provisioning, saving valuable time.</li>
+                        <li>Consistent security policies applied across your team without manual overhead.</li>
+                        <li>Focus more on innovation, less on access management complexities.</li>
+                    </ul>
+                </div>
+                <!-- AppSec Engineer Card -->
+                <div class="bg-snyk-card-bg-light rounded-lg p-6 card-shadow border border-snyk-border-dark">
+                    <h4 class="text-xl font-semibold mb-3 text-snyk-heading-color">For AppSec Engineers</h4>
+                    <ul class="list-disc pl-5 text-snyk-text-light opacity-80 space-y-2">
+                        <li>Centralized identity management for Snyk across your organization.</li>
+                        <li>Improved compliance and audit readiness with robust user access logs.</li>
+                        <li>Enhanced control over user roles and permissions within Snyk.</li>
+                        <li>Easier scalability of security operations as your team grows.</li>
+                    </ul>
+                </div>
+                <!-- CISO Card -->
+                <div class="bg-snyk-card-bg-light rounded-lg p-6 card-shadow border border-snyk-border-dark">
+                    <h4 class="text-xl font-semibold mb-3 text-snyk-heading-color">For CISOs</h4>
+                    <ul class="list-disc pl-5 text-snyk-text-light opacity-80 space-y-2">
+                        <li>Strengthened overall security posture with robust identity governance.</li>
+                        <li>Reduced risk of unauthorized access and insider threats.</li>
+                        <li>Simplified compliance audits and reporting for identity and access management.</li>
+                        <li>Scalable and secure developer environment, foundational for AI-powered development.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Setup Steps Section -->
+        <section class="mb-12 rounded-lg card-shadow">
+            <h3 class="text-2xl md:text-3xl font-bold text-center mb-8 text-snyk-heading-color">Integration Setup Steps: Snyk + Okta</h3>
+            <div id="accordion-container" class="space-y-4">
+                <!-- Step 1 -->
+                <div class="border border-snyk-border-dark rounded-lg overflow-hidden">
+                    <div class="accordion-header" data-target="step1-content">
+                        <span>1. Initiate Integration in Snyk</span>
+                        <span class="accordion-icon">&#x25B8;</span> <!-- Right-pointing triangle -->
+                    </div>
+                    <div id="step1-content" class="accordion-content">
+                        <p class="mb-2">Log in to your Snyk account and navigate to <strong>Settings > Integrations</strong>. Find and select the Okta integration option.</p>
+                        <img src="https://placehold.co/600x300/e0f2f7/263238?text=Snyk+Integration+Settings" alt="Snyk Integration Settings Placeholder" class="w-full h-auto rounded-md mt-4">
+                        <button class="summarize-btn gemini-button mt-4">Summarize Step ✨</button>
+                        <div class="summary-output text-sm mt-2 p-2 rounded-md hidden"></div>
+                    </div>
+                </div>
+                <!-- Step 2 -->
+                <div class="border border-snyk-border-dark rounded-lg overflow-hidden">
+                    <div class="accordion-header" data-target="step2-content">
+                        <span>2. Configure Okta Application</span>
+                        <span class="accordion-icon">&#x25B8;</span>
+                    </div>
+                    <div id="step2-content" class="accordion-content">
+                        <p class="mb-2">In your Okta Admin Console, create a new application for Snyk (e.g., using SAML 2.0 or OIDC). You will need to configure:</p>
+                        <ul class="list-disc pl-5 mb-2 text-snyk-text-light opacity-80">
+                            <li><strong>Single Sign-On URL:</strong> Provided by Snyk.</li>
+                            <li><strong>Audience URI (SP Entity ID):</strong> Provided by Snyk.</li>
+                            <li><strong>Name ID Format:</strong> Typically 'EmailAddress'.</li>
+                            <li><strong>Application visibility:</strong> Enable 'Display application icon to users'.</li>
+                        </ul>
+                         <img src="https://placehold.co/600x300/e0f7e0/263238?text=Okta+App+Configuration" alt="Okta Application Configuration Placeholder" class="w-full h-auto rounded-md mt-4">
+                         <button class="summarize-btn gemini-button mt-4">Summarize Step ✨</button>
+                         <div class="summary-output text-sm mt-2 p-2 rounded-md hidden"></div>
+                    </div>
+                </div>
+                <!-- Step 3 -->
+                <div class="border border-snyk-border-dark rounded-lg overflow-hidden">
+                    <div class="accordion-header" data-target="step3-content">
+                        <span>3. Exchange Metadata</span>
+                        <span class="accordion-icon">&#x25B8;</span>
+                    </div>
+                    <div id="step3-content" class="accordion-content">
+                        <p class="mb-2">From Okta, download the IdP metadata XML file or copy the metadata URL. Upload this to Snyk's integration settings. Snyk will provide its Service Provider (SP) metadata for you to input into Okta, if required.</p>
+                         <img src="https://placehold.co/600x300/f7e0f2/263238?text=Metadata+Exchange" alt="Metadata Exchange Placeholder" class="w-full h-auto rounded-md mt-4">
+                         <button class="summarize-btn gemini-button mt-4">Summarize Step ✨</button>
+                         <div class="summary-output text-sm mt-2 p-2 rounded-md hidden"></div>
+                    </div>
+                </div>
+                <!-- Step 4 -->
+                <div class="border border-snyk-border-dark rounded-lg overflow-hidden">
+                    <div class="accordion-header" data-target="step4-content">
+                        <span>4. User & Group Provisioning</span>
+                        <span class="accordion-icon">&#x25B8;</span>
+                    </div>
+                    <div id="step4-content" class="accordion-content">
+                        <p class="mb-2">Configure user and group assignments in Okta for the Snyk application. This ensures your users can seamlessly log in and have the correct permissions within Snyk.</p>
+                        <ul class="list-disc pl-5 mb-2 text-snyk-text-light opacity-80">
+                            <li>Assign individual users or groups to the Snyk application in Okta.</li>
+                            <li>Consider configuring SCIM provisioning for automated user lifecycle management.</li>
+                        </ul>
+                         <img src="https://placehold.co/600x300/e0f2f7/263238?text=Okta+User+Assignment" alt="Okta User Assignment Placeholder" class="w-full h-auto rounded-md mt-4">
+                         <button class="summarize-btn gemini-button mt-4">Summarize Step ✨</button>
+                         <div class="summary-output text-sm mt-2 p-2 rounded-md hidden"></div>
+                    </div>
+                </div>
+                <!-- Step 5 -->
+                <div class="border border-snyk-border-dark rounded-lg overflow-hidden">
+                    <div class="accordion-header" data-target="step5-content">
+                        <span>5. Test and Enable</span>
+                        <span class="accordion-icon">&#x25B8;</span>
+                    </div>
+                    <div id="step5-content" class="accordion-content">
+                        <p class="mb-2">Perform a test login from Okta to Snyk to verify the integration. Once successful, enable the integration in Snyk. Your team can now enjoy secure, single sign-on access!</p>
+                         <img src="https://placehold.co/600x300/f7e0e0/263238?text=Test+and+Enable" alt="Test and Enable Placeholder" class="w-full h-auto rounded-md mt-4">
+                         <button class="summarize-btn gemini-button mt-4">Summarize Step ✨</button>
+                         <div class="summary-output text-sm mt-2 p-2 rounded-md hidden"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AI Assistant Section -->
+        <section class="mb-12 bg-snyk-card-bg-light rounded-lg p-6 md:p-8 card-shadow border border-snyk-border-dark">
+            <h3 class="text-2xl md:text-3xl font-bold text-center mb-8 text-snyk-heading-color">AI Integration Assistant ✨</h3>
+            <div class="flex flex-col space-y-4">
+                <textarea id="qa-input" class="w-full p-3 border rounded-md focus:ring-2" rows="4" placeholder="Ask a question about the Snyk + Okta integration..."></textarea>
+                <button id="ask-gemini-btn" class="gemini-button self-start">Ask Gemini ✨ <span id="qa-spinner" class="loading-spinner hidden"></span></button>
+                <div id="qa-output" class="p-4 rounded-md hidden">
+                    <!-- AI response will be displayed here -->
+                </div>
+            </div>
+        </section>
+
+
+        <!-- Call to Action Section -->
+        <section class="text-center bg-snyk-card-bg-light rounded-lg p-8 md:p-10 mb-12 card-shadow border border-snyk-border-dark">
+            <h3 class="text-2xl md:text-3xl font-bold mb-4 text-snyk-heading-color">Ready to Secure Your Software in the AI Era?</h3>
+            <p class="text-lg text-snyk-text-light opacity-80 mb-6 max-w-2xl mx-auto">
+                Connect Snyk with Okta today and provide your development teams with seamless, secure access while strengthening your overall security posture.
+            </p>
+            <a href="https://snyk.io/contact-sales/" target="_blank" class="inline-block snyk-button">
+                Request a Demo
+            </a>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-snyk-card-bg-light text-snyk-text-light py-6 border-t border-snyk-border-dark">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm">
+            &copy; 2025 Snyk. All rights reserved. | <a href="https://snyk.io/privacy-policy/" target="_blank" class="hover:underline text-snyk-accent-purple">Privacy Policy</a>
+        </div>
+    </footer>
+
+    <script>
+        // JavaScript for accordion functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            const accordionHeaders = document.querySelectorAll('.accordion-header');
+            const summarizeButtons = document.querySelectorAll('.summarize-btn');
+            const askGeminiBtn = document.getElementById('ask-gemini-btn');
+            const qaInput = document.getElementById('qa-input');
+            const qaOutput = document.getElementById('qa-output');
+            const qaSpinner = document.getElementById('qa-spinner');
+
+            // Accordion Logic
+            accordionHeaders.forEach(header => {
+                header.addEventListener('click', () => {
+                    const targetId = header.dataset.target;
+                    const content = document.getElementById(targetId);
+                    const icon = header.querySelector('.accordion-icon');
+
+                    // Toggle active class on content
+                    content.classList.toggle('active');
+
+                    // Rotate icon
+                    icon.classList.toggle('rotate');
+
+                    // Close other open accordions
+                    accordionHeaders.forEach(otherHeader => {
+                        if (otherHeader !== header) {
+                            const otherTargetId = otherHeader.dataset.target;
+                            const otherContent = document.getElementById(otherTargetId);
+                            const otherIcon = otherHeader.querySelector('.accordion-icon');
+
+                            otherContent.classList.remove('active');
+                            otherIcon.classList.remove('rotate');
+                        }
+                    });
+                });
+            });
+
+            // Gemini API Call Function
+            async function callGeminiAPI(prompt) {
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+                const apiKey = ""; // Canvas will automatically provide the API key
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        return result.candidates[0].content.parts[0].text;
+                    } else {
+                        console.error('Unexpected API response structure:', result);
+                        return 'Sorry, I could not get a response from the AI.';
+                    }
+                } catch (error) {
+                    console.error('Error calling Gemini API:', error);
+                    return 'There was an error processing your request. Please try again.';
+                }
+            }
+
+            // Summarize Button Logic
+            summarizeButtons.forEach(button => {
+                button.addEventListener('click', async () => {
+                    const contentDiv = button.closest('.accordion-content');
+                    const textToSummarizeElement = contentDiv.querySelector('p'); // Get the main paragraph
+                    const listToSummarizeElement = contentDiv.querySelector('ul'); // Get the list if it exists
+                    
+                    let textToSummarize = '';
+                    if (textToSummarizeElement) {
+                        textToSummarize += textToSummarizeElement.innerText;
+                    }
+                    if (listToSummarizeElement) {
+                        textToSummarize += '\n' + Array.from(listToSummarizeElement.children).map(li => li.innerText).join('\n');
+                    }
+
+                    const summaryOutputDiv = contentDiv.querySelector('.summary-output');
+
+                    button.innerHTML = 'Summarizing... <span class="loading-spinner"></span>';
+                    button.disabled = true;
+                    summaryOutputDiv.classList.add('hidden'); // Hide previous summary
+
+                    const prompt = `Summarize the following Snyk + Okta integration setup step concisely and clearly. Focus on the main action and purpose of the step. Step content: "${textToSummarize}"`;
+                    const summary = await callGeminiAPI(prompt);
+
+                    summaryOutputDiv.innerHTML = `<strong>Summary:</strong> ${summary}`;
+                    summaryOutputDiv.classList.remove('hidden'); // Show the summary
+                    button.innerHTML = 'Summarize Step ✨';
+                    button.disabled = false;
+                });
+            });
+
+            // Ask Gemini Button Logic
+            askGeminiBtn.addEventListener('click', async () => {
+                const userQuestion = qaInput.value.trim();
+                if (!userQuestion) {
+                    qaOutput.textContent = 'Please enter a question.';
+                    qaOutput.classList.remove('hidden');
+                    return;
+                }
+
+                askGeminiBtn.disabled = true;
+                askGeminiBtn.innerHTML = 'Asking... <span class="loading-spinner"></span>';
+                qaOutput.classList.add('hidden'); // Hide previous response
+
+                // Provide context from the entire document for a better answer
+                const allStepsContent = Array.from(document.querySelectorAll('.accordion-content')).map(contentDiv => contentDiv.innerText).join('\n\n');
+                const benefitsContent = Array.from(document.querySelectorAll('.benefits-section ul')).map(ul => ul.innerText).join('\n\n');
+
+                const fullContext = `
+                Snyk + Okta Integration Application Information:
+
+                Hero Section:
+                "Empower Secure Software in the AI Era with Snyk and Okta. Unify identity and application security. The Snyk AI Trust Platform, combined with Okta's leading identity management, creates a seamless and secure development lifecycle, ensuring every user and every line of code is trusted."
+
+                Benefits:
+                ${benefitsContent}
+
+                Integration Setup Steps:
+                ${allStepsContent}
+
+                Based on the above context about the Snyk + Okta integration and general knowledge about Snyk (a developer security platform) and Okta (an identity management platform), answer the following question concisely and pragmatically. If the information isn't explicitly in the context, use general knowledge.
+
+                Question: "${userQuestion}"`;
+
+                const aiResponse = await callGeminiAPI(fullContext);
+
+                qaOutput.textContent = aiResponse;
+                qaOutput.classList.remove('hidden'); // Show the response
+                askGeminiBtn.disabled = false;
+                askGeminiBtn.innerHTML = 'Ask Gemini ✨';
+            });
+        });
+    </script>
+</body>
+</html>
